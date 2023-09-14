@@ -34,12 +34,14 @@ include = [
     "gw_dsl_parser",
 ]
 exclude = [ "/tests" ]
-artifacts = []
+artifacts = [
+    "gw_dsl_parser/dsl_parser.wasm"
+]
 
 [tool.hatch.build.targets.sdist]
 include = [
     "README.md", "LICENSE",
-    "gw_dsl_parser",
+    "gw_dsl_parser"
 ]
 [build-system]
 requires = ["hatchling"]
