@@ -15,7 +15,6 @@ class DslToSqlWasm:
         self.store = Store(self.engine)
         self.store.set_wasi(self._get_wasi_config())
         self.module = Module.from_file(self.engine, os.path.join(os.path.dirname(os.path.abspath(__file__)), "dsl_parser.wasm"))
-        self.instance = self.linker.instantiate(self.store, self.module)
 
     def _get_wasi_config(self) -> WasiConfig:
         wasi = WasiConfig()
@@ -59,7 +58,8 @@ class DslToSqlWasm:
 
     def get_sql_from_payload(self, table_name: str, payload: Dict[str, Any]) -> str:
         """Get SQL from payload on wasm"""
-        exports = self.instance.exports(self.store)
+        instance = self.linker.instantiate(self.store, self.module)
+        exports = instance.exports(self.store)
 
         with self._gen_str_ptrs(exports, table_name, json.dumps(payload)) as (table_name_ptr, payload_ptr):
             result_ptr = exports.get("parser_dsl_with_table")(
