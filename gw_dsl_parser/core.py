@@ -56,17 +56,16 @@ class DslToSqlWasm:
 
         return bytes(byte_list).decode()
 
-    def get_sql_from_payload(self, table_name: str, payload: Dict[str, Any], quote: int) -> str:
+    def get_sql_from_payload(self, table_name: str, payload: Dict[str, Any]) -> str:
         """Get SQL from payload on wasm"""
         instance = self.linker.instantiate(self.store, self.module)
         exports = instance.exports(self.store)
 
         with self._gen_str_ptrs(exports, table_name, json.dumps(payload)) as (table_name_ptr, payload_ptr):
-            result_ptr = exports.get("parser_dsl_with_table_quote")(
+            result_ptr = exports.get("parser_dsl_with_table")(
                 self.store,
                 table_name_ptr,
                 payload_ptr,
-                quote
             )
             return self._get_str_from_ptr(exports, result_ptr)
 
@@ -74,6 +73,6 @@ class DslToSqlWasm:
 dsl_to_wasm = DslToSqlWasm()
 
 
-def get_sql_from_payload(table_name: str, payload: Dict[str, Any], quote: int = 2) -> str:
+def get_sql_from_payload(table_name: str, payload: Dict[str, Any]) -> str:
     """Get SQL from payload"""
-    return dsl_to_wasm.get_sql_from_payload(table_name, payload, quote)
+    return dsl_to_wasm.get_sql_from_payload(table_name, payload)
