@@ -2,7 +2,7 @@ import os
 import sys
 from urllib.request import urlretrieve
 
-wasm_version = "0.1.4-pygwalker-2"
+wasm_version = "0.1.4-pygwalker-3"
 
 url = f"https://pygwalker-public-bucket.s3.amazonaws.com/gw-dsl-parser-wasm/dsl_parser_{wasm_version}.wasm"
 outout_path = os.path.join(
