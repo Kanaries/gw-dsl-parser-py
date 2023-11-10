@@ -1,4 +1,4 @@
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List
 from contextlib import contextmanager
 import os
 import json
@@ -56,23 +56,42 @@ class DslToSqlWasm:
 
         return bytes(byte_list).decode()
 
-    def get_sql_from_payload(self, table_name: str, payload: Dict[str, Any]) -> str:
+    def get_sql_from_payload(
+        self,
+        table_name: str,
+        payload: Dict[str, Any],
+        field_meta: List[Dict[str, str]] = None
+    ) -> str:
         """Get SQL from payload on wasm"""
         instance = self.linker.instantiate(self.store, self.module)
         exports = instance.exports(self.store)
 
-        with self._gen_str_ptrs(exports, table_name, json.dumps(payload)) as (table_name_ptr, payload_ptr):
-            result_ptr = exports.get("parser_dsl_with_table")(
-                self.store,
-                table_name_ptr,
-                payload_ptr,
-            )
-            return self._get_str_from_ptr(exports, result_ptr)
+        if field_meta is None:
+            with self._gen_str_ptrs(exports, table_name, json.dumps(payload)) as (table_name_ptr, payload_ptr):
+                result_ptr = exports.get("parser_dsl_with_table")(
+                    self.store,
+                    table_name_ptr,
+                    payload_ptr,
+                )
+                return self._get_str_from_ptr(exports, result_ptr)
+        else:
+            with self._gen_str_ptrs(exports, table_name, json.dumps(payload), json.dumps(field_meta)) as (table_name_ptr, payload_ptr, field_meta_ptr):
+                result_ptr = exports.get("parser_dsl_with_meta")(
+                    self.store,
+                    table_name_ptr,
+                    payload_ptr,
+                    field_meta_ptr,
+                )
+                return self._get_str_from_ptr(exports, result_ptr)
 
 
 dsl_to_wasm = DslToSqlWasm()
 
 
-def get_sql_from_payload(table_name: str, payload: Dict[str, Any]) -> str:
+def get_sql_from_payload(
+    table_name: str,
+    payload: Dict[str, Any],
+    field_meta: List[Dict[str, str]] = None
+) -> str:
     """Get SQL from payload"""
-    return dsl_to_wasm.get_sql_from_payload(table_name, payload)
+    return dsl_to_wasm.get_sql_from_payload(table_name, payload, field_meta)
