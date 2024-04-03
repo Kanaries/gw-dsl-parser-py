@@ -45,7 +45,7 @@ jobs:
           python -m build .
       - name: Uploading PyPI
         if: ${{ matrix.python-version == '3.11' && matrix.os-version == 'ubuntu-latest' }}
-        uses: pypa/gh-action-pypi-publish@v1.8.5
+        uses: pypa/gh-action-pypi-publish@v1.8.14
         with:
           # PyPI user
           # Password for your PyPI user or an access token
