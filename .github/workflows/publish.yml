@@ -44,7 +44,7 @@ jobs:
           pip install build twine
           python -m build .
       - name: Uploading PyPI
-        if: ${{ matrix.python-version == '3.11' && matrix.os-version == 'ubuntu-latest' }}
+        if: ${{ matrix.python-version == '3.12' && matrix.os-version == 'ubuntu-latest' }}
         uses: pypa/gh-action-pypi-publish@v1.8.14
         with:
           # PyPI user
