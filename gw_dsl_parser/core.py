@@ -1,5 +1,6 @@
 from typing import Dict, Any, Tuple, List
 from contextlib import contextmanager
+from threading import Lock
 import os
 import json
 
@@ -15,6 +16,7 @@ class DslToSqlWasm:
         self.store = Store(self.engine)
         self.store.set_wasi(self._get_wasi_config())
         self.module = Module.from_file(self.engine, os.path.join(os.path.dirname(os.path.abspath(__file__)), "dsl_parser.wasm"))
+        self._lock = Lock()
 
     def _get_wasi_config(self) -> WasiConfig:
         wasi = WasiConfig()
@@ -63,26 +65,27 @@ class DslToSqlWasm:
         field_meta: List[Dict[str, str]] = None
     ) -> str:
         """Get SQL from payload on wasm"""
-        instance = self.linker.instantiate(self.store, self.module)
-        exports = instance.exports(self.store)
+        with self._lock:
+            instance = self.linker.instantiate(self.store, self.module)
+            exports = instance.exports(self.store)
 
-        if field_meta is None:
-            with self._gen_str_ptrs(exports, table_name, json.dumps(payload)) as (table_name_ptr, payload_ptr):
-                result_ptr = exports.get("parser_dsl_with_table")(
-                    self.store,
-                    table_name_ptr,
-                    payload_ptr,
-                )
-                return self._get_str_from_ptr(exports, result_ptr)
-        else:
-            with self._gen_str_ptrs(exports, table_name, json.dumps(payload), json.dumps(field_meta)) as (table_name_ptr, payload_ptr, field_meta_ptr):
-                result_ptr = exports.get("parser_dsl_with_meta")(
-                    self.store,
-                    table_name_ptr,
-                    payload_ptr,
-                    field_meta_ptr,
-                )
-                return self._get_str_from_ptr(exports, result_ptr)
+            if field_meta is None:
+                with self._gen_str_ptrs(exports, table_name, json.dumps(payload)) as (table_name_ptr, payload_ptr):
+                    result_ptr = exports.get("parser_dsl_with_table")(
+                        self.store,
+                        table_name_ptr,
+                        payload_ptr,
+                    )
+                    return self._get_str_from_ptr(exports, result_ptr)
+            else:
+                with self._gen_str_ptrs(exports, table_name, json.dumps(payload), json.dumps(field_meta)) as (table_name_ptr, payload_ptr, field_meta_ptr):
+                    result_ptr = exports.get("parser_dsl_with_meta")(
+                        self.store,
+                        table_name_ptr,
+                        payload_ptr,
+                        field_meta_ptr,
+                    )
+                    return self._get_str_from_ptr(exports, result_ptr)
 
 
 dsl_to_wasm = DslToSqlWasm()
